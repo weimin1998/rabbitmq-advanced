@@ -1,6 +1,9 @@
 package com.weimin.produer.web;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.util.concurrent.FailureCallback;
@@ -11,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Slf4j
@@ -53,4 +57,19 @@ public class ProducerController {
         return "发送成功";
     }
 
+
+    // 发送持久化消息
+    // http://localhost:8080/producer/sendDurableMsg
+    @GetMapping("/sendDurableMsg")
+    public String sendDurableMsg() {
+        Message message = MessageBuilder.
+                withBody("hello, my name is wm".getBytes(StandardCharsets.UTF_8))
+                .setDeliveryMode(MessageDeliveryMode.PERSISTENT)// 投递方式，为持久的
+                .build();
+
+        rabbitTemplate.convertAndSend("durable.queue", message);
+        // 发送完消息后，由于消费者没有配置监听器，所以消息不会被消费。
+        // 这时，重启mq，消息还存在。
+        return "发送成功";
+    }
 }
